@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>WebMをMP4に変換して再生</title>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
+</head>
+<body>
+  <h2>WebMをMP4に変換して再生！</h2>
+  <input type="file" id="uploader" accept="video/webm">
+  <br><br>
+  <video id="player" width="640" height="360" controls></video>
+
+  <script>
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+
+    document.getElementById('uploader').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!ffmpeg.isLoaded()) {
+        await ffmpeg.load();
+      }
+
+      const fileName = 'input.webm';
+      const outputName = 'output.mp4';
+
+      ffmpeg.FS('writeFile', fileName, await fetchFile(file));
+
+      await ffmpeg.run('-i', fileName, '-c:v', 'libx264', '-c:a', 'aac', outputName);
+
+      const data = ffmpeg.FS('readFile', outputName);
+      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const videoURL = URL.createObjectURL(videoBlob);
+
+      const player = document.getElementById('player');
+      player.src = videoURL;
+      player.load();
+      player.play();
+    });
+  </script>
+</body>
+</html>
